@@ -260,8 +260,10 @@ class CompanyFilings(AbstractFiling):
             list of str: List of URLs that match ``filing_type``.
         """
         filings = data.find_all("filing")
-        filings_filtered = [f for f in filings if f.type.string == self.filing_type.value]
-        return [f.filinghref.string for f in filings_filtered]
+        if self.filing_type is None:
+            return [f.filinghref.string for f in filings]
+        else:
+            return [f.filinghref.string for f in filings if f.type.string == self.filing_type.value]
 
     # TODO: Change this to return accession numbers that are turned into URLs later
     def _get_urls_for_cik(self, cik, **kwargs):
@@ -296,7 +298,6 @@ class CompanyFilings(AbstractFiling):
             warnings.warn(
                 "Only {num} of {count} filings were found for {cik}.".format(
                     num=len(txt_urls), count=self.count, cik=cik))
-
         # Takes `count` filings at most
         return txt_urls[:self.count]
 
@@ -328,13 +329,16 @@ class CompanyFilings(AbstractFiling):
 
         inputs = []
         for cik, links in urls.items():
-            formatted_dir = dir_pattern.format(cik=cik,
-                                               type=self.filing_type.value)
+            # If no filing type, just leave all filings for CIK under directory named after CIK
+            if self.filing_type is None:
+                formatted_dir = cik
+            else:
+                formatted_dir = dir_pattern.format(cik=cik,
+                                                   type=self.filing_type.value)
             for link in links:
                 formatted_file = file_pattern.format(
                     accession_number=self.get_accession_number(link))
                 path = os.path.join(directory, formatted_dir, formatted_file)
                 inputs.append((link, path))
 
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.client.wait_for_download_async(inputs))
+        asyncio.run(self.client.wait_for_download_async(inputs))

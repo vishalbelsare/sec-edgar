@@ -30,6 +30,19 @@ You can clone the project:
 Running
 -------
 
+If you are using Jupyter Notebook, you'll need to install and configure nest-asyncio:
+
+.. code-block:: bash
+
+   pip install nest-asyncio
+
+Then add the following code at the start of your notebook:
+
+.. code-block:: python
+
+   import nest_asyncio
+   nest_asyncio.apply()
+
 Company Filings
 ~~~~~~~~~~~~~~~
 
@@ -43,7 +56,7 @@ Single Company
     # 10Q filings for Apple (ticker "aapl")
     my_filings = filings(cik_lookup="aapl",
                          filing_type=FilingType.FILING_10Q,
-                         user_agent="Your name (your email)")
+                         user_agent="Your name (your.name@example.com)")
     my_filings.save('/path/to/dir')
 
 
@@ -57,7 +70,7 @@ Multiple Companies
     # 10Q filings for Apple and Facebook (tickers "aapl" and "fb")
     my_filings = filings(cik_lookup=["aapl", "fb"],
                          filing_type=FilingType.FILING_10Q,
-                         user_agent="Your name (your email)")
+                         user_agent="Your name (your.name@example.com)")
     my_filings.save('/path/to/dir')
 
 
@@ -71,7 +84,7 @@ Daily Filings
     from datetime import date
 
     daily_filings = filings(start_date=date(2021, 6, 30),
-                            user_agent="Your name (your email)")
+                            user_agent="Your name (your.name@example.com)")
     daily_urls = daily_filings.get_urls()
 
 
@@ -87,7 +100,7 @@ Documentation
 To learn more about the APIs and latest changes in the project, read the `official documentation <https://sec-edgar.github.io/sec-edgar>`_.
 
 
-.. |Tests Status| image:: https://github.com/sec-edgar/sec-edgar/workflows/Tests/badge.svg
-   :target: https://github.com/sec-edgar/sec-edgar/actions?query=workflow%3ATests
-.. |Docs Status| image:: https://github.com/sec-edgar/sec-edgar/workflows/Build%20Docs/badge.svg
-   :target: https://github.com/sec-edgar/sec-edgar/actions?query=workflow%3A%22Build+Docs%22
+.. |Tests Status| image:: https://github.com/sec-edgar/sec-edgar/actions/workflows/test.yml/badge.svg
+   :target: https://github.com/sec-edgar/sec-edgar/actions/workflows/test.yml
+.. |Docs Status| image:: https://github.com/sec-edgar/sec-edgar/actions/workflows/docs.yml/badge.svg
+   :target: https://github.com/sec-edgar/sec-edgar/actions/workflows/docs.yml

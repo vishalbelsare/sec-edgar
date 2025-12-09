@@ -1,4 +1,5 @@
-pytest
-flake8
-pydocstyle >= 4.0.0
 click
+flake8
+pydocstyle
+pytest
+pytest-asyncio

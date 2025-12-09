@@ -71,7 +71,7 @@ def mock_filing_data(monkeysession):
                           MockResponse(content=bytes("Testing...", "utf-8")))
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def tmp_data_directory(tmpdir_factory):
     return str(tmpdir_factory.mktemp("tmp_data"))
 
@@ -93,4 +93,4 @@ def mock_single_cik_filing(monkeysession):
 @pytest.fixture(scope="session")
 def real_test_client():
     """``NetworkClient`` to use when running live smoke tests."""
-    return NetworkClient(user_agent="sec_edgar_testing")
+    return NetworkClient(user_agent="Example User (example@example.com)")

@@ -1,9 +1,7 @@
-import os
 import string
 from abc import ABC, abstractmethod
 
 from secedgar.exceptions import NoFilingsError
-from secedgar.parser import MetaParser
 
 
 class AbstractFiling(ABC):
@@ -11,20 +9,6 @@ class AbstractFiling(ABC):
 
     .. versionadded:: 0.1.5
     """
-
-    def extract_meta(self,
-                     directory,
-                     out_dir=None,
-                     create_subdir=True,
-                     rm_infile=False):
-        """Extract meta data from filings in directory."""
-        for root, _, files in os.walk(directory):
-            for file in files:
-                if file.endswith('.txt'):
-                    MetaParser().process(os.path.join(root, file),
-                                         out_dir=out_dir,
-                                         create_subdir=create_subdir,
-                                         rm_infile=rm_infile)
 
     @property
     @abstractmethod
@@ -90,12 +74,12 @@ class AbstractFiling(ABC):
         return stripped.replace(" ", "_")
 
     def get_urls_safely(self, **kwargs):
-        """Wrapper around `get_urls` to check if there is a positive number of URLs, and warn if they don't.
+        """Wrapper around `get_urls` to check if there is a positive number of URLs.
 
         .. note:: This method will not check if the URLs are valid. Simply if they exist.
 
         Raises:
-            NoFilingsError: If no URLs exist, then NoFilingsError is raised.
+            ``NoFilingsError``: If no URLs exist, then NoFilingsError is raised.
 
         Returns:
             urls (dict): Result of `get_urls` method.

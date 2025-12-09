@@ -8,7 +8,7 @@ from secedgar.exceptions import CIKError, EDGARQueryError
 
 
 @functools.lru_cache()
-def get_cik_map():
+def get_cik_map(user_agent):
     """Get dictionary of tickers and company names to CIK numbers.
 
     Uses ``functools.lru_cache`` to cache response if used in later calls.
@@ -29,7 +29,8 @@ def get_cik_map():
 
     .. versionadded:: 0.1.6
     """
-    response = requests.get("https://www.sec.gov/files/company_tickers.json")
+    headers = {'user-agent': user_agent}
+    response = requests.get("https://www.sec.gov/files/company_tickers.json", headers=headers)
     json_response = response.json()
     return {key: {v[key].upper(): str(v["cik_str"]) for v in json_response.values()
                   if v[key] is not None}
@@ -43,13 +44,19 @@ class CIKLookup:
 
     Args:
         lookup (Union[str, list]): Ticker, company name, or list of tickers and/or company names.
-        client (secedgar.client.NetworkClient): A network client object to use. See
-            :class:`secedgar.client.NetworkClient` for more details.
+        client (Union[None, secedgar.client.NetworkClient]): A network client object to use.
+            If ``None`` is given, then will pass kwargs to :class:`secedgar.client.NetworkClient`.
+            See :class:`secedgar.client.NetworkClient` for more details. Defaults to ``None``.
+
+    .. warning::
+
+        If ``None`` is passed to client, you must specify your ``user_agent`` in ``kwargs``.
+        For example, ``CIKLookup(lookup=["aapl"], user_agent="Name (email@example.com")``.
 
     .. versionadded:: 0.1.5
     """
 
-    def __init__(self, lookups, client, **kwargs):
+    def __init__(self, lookups, client=None, **kwargs):
         if lookups and isinstance(lookups, str):
             self._lookups = [lookups]  # make single string into list
         else:
@@ -161,7 +168,7 @@ class CIKLookup:
             # Exclude table header
             table_rows = soup.find('table', {'summary': 'Results'}).find_all('tr')[1:]
             # Company names are in second column of table
-            return [''.join(row.find_all('td')[1].find_all(text=True)) for row in table_rows]
+            return [''.join(row.find_all('td')[1].find_all(string=True)) for row in table_rows]
         except AttributeError:
             # If there are no CIK possibilities, then no results were returned
             raise EDGARQueryError
@@ -195,7 +202,7 @@ class CIKLookup:
         ciks = {}
         to_lookup = set(self.lookups)
 
-        cik_map = get_cik_map()
+        cik_map = get_cik_map(self.client.user_agent)
 
         # all keys upper case
         ticker_map = cik_map["ticker"]

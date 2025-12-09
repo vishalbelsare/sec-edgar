@@ -233,9 +233,27 @@ class TestCompanyFilings:
         first_txt_url = aapl.get_urls()["aapl"][0]
         assert first_txt_url.split(".")[-1] == "txt"
 
+    @pytest.mark.smoke
+    def test_no_json_decode_error(self, mock_user_agent):
+        from json import JSONDecodeError
+
+        from secedgar import CompanyFilings, FilingType
+
+        my_filings = CompanyFilings(cik_lookup='aapl',
+                                    filing_type=FilingType.FILING_10Q,
+                                    count=15,
+                                    user_agent=mock_user_agent)
+        try:
+            my_filings.get_urls()
+        except JSONDecodeError:
+            pytest.fail("Received JSONDecodeError")
+
     @pytest.mark.parametrize("new_filing_type",
-                             (FilingType.FILING_10K, FilingType.FILING_8K,
-                              FilingType.FILING_13FHR, FilingType.FILING_SD))
+                             (FilingType.FILING_10K,
+                              FilingType.FILING_8K,
+                              FilingType.FILING_13FHR,
+                              FilingType.FILING_SD,
+                              None))
     def test_filing_type_setter(self, mock_user_agent, new_filing_type):
         f = CompanyFilings(user_agent=mock_user_agent,
                            cik_lookup="aapl",
@@ -292,11 +310,60 @@ class TestCompanyFilings:
         f.save(tmp_data_directory)
         assert len(os.listdir(tmp_data_directory)) > 0
 
+    @pytest.mark.parametrize(
+        "match_format",
+        [
+            "EXACT",
+            "AMEND",
+            "ALL"
+        ]
+    )
+    def test_match_format_good(self, mock_user_agent, match_format):
+        f = CompanyFilings(["aapl", "amzn", "msft"],
+                           FilingType.FILING_10Q,
+                           user_agent=mock_user_agent,
+                           count=3,
+                           match_format=match_format)
+
+        assert f.match_format == match_format
+
+    @pytest.mark.parametrize(
+        "match_format",
+        [
+            "exact",
+            "amend",
+            "all",
+            "none",
+            None,
+            True,
+            False,
+            1,
+            0
+        ]
+    )
+    def test_match_format_bad(self, mock_user_agent, match_format):
+        with pytest.raises(ValueError):
+            CompanyFilings(["aapl", "amzn", "msft"],
+                           FilingType.FILING_10Q,
+                           user_agent=mock_user_agent,
+                           count=3,
+                           match_format=match_format)
+
     @pytest.mark.smoke
     def test_filing_save_multiple_ciks_smoke(self, tmp_data_directory,
                                              real_test_client):
         f = CompanyFilings(["aapl", "amzn", "msft"],
-                           FilingType.FILING_10Q,
+                           filing_type=FilingType.FILING_10Q,
+                           client=real_test_client,
+                           count=3)
+        f.save(tmp_data_directory)
+        assert len(os.listdir(tmp_data_directory)) > 0
+
+    @pytest.mark.asyncio
+    @pytest.mark.smoke
+    def test_filing_company_none_filing_type(self, tmp_data_directory, real_test_client):
+        f = CompanyFilings(["aapl", "msft", "amzn"],
+                           filing_type=None,
                            client=real_test_client,
                            count=3)
         f.save(tmp_data_directory)
@@ -342,8 +409,10 @@ class TestCompanyFilings:
         assert all(
             len(f.get_urls().get(key)) == count for key in f.get_urls().keys())
 
-    @pytest.mark.parametrize("count,raises_error", [(5, False), (10, False),
-                                                    (20, True), (30, True),
+    @pytest.mark.parametrize("count,raises_error", [(5, False),
+                                                    (10, False),
+                                                    (20, True),
+                                                    (30, True),
                                                     (40, True)])
     @pytest.mark.filterwarnings("ignore::DeprecationWarning")
     # For collections.abc warning 3.8+
@@ -364,7 +433,11 @@ class TestCompanyFilings:
         else:
             try:
                 w = recwarn.pop(UserWarning)
-                pytest.fail("Expected no UserWarning, but received one.")
+                # Allow XMLParsedAsHTMLWarning, but don't allow others
+                if w and w._category_name == "XMLParsedAsHTMLWarning":
+                    pass
+                else:
+                    pytest.fail("Expected no UserWarning, but received one.")
             # Should raise assertion error since no UserWarning should be found
             except AssertionError:
                 pass
@@ -375,7 +448,8 @@ class TestCompanyFilings:
                                          mock_user_agent):
         my_filings = CompanyFilings(cik_lookup="IBM",
                                     filing_type=FilingType.FILING_10Q,
-                                    user_agent=mock_user_agent)
+                                    user_agent=mock_user_agent,
+                                    count=3)
         my_filings.save(tmp_data_directory)
         assert len(os.listdir(tmp_data_directory)) > 0, "No file or directory created after save."
 

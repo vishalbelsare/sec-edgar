@@ -4,7 +4,7 @@ import re
 from setuptools import find_packages, setup
 from setuptools.command.install import install
 
-SUPPORTED_VERSIONS = ['3.6', '3.7', '3.8', '3.9']
+SUPPORTED_VERSIONS = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 SUPPORTED_VERSIONS_CLASSIFIERS = ['Programming Language :: Python :: {version}'.format(
     version=version) for version in SUPPORTED_VERSIONS]
 CLASSIFIERS = [
@@ -76,7 +76,12 @@ setup(
     keywords=['SEC', 'EDGAR', 'crawler', 'filings'],
     tests_require=parse_requirements('requirements.txt', 'requirements-dev.txt'),
     extras_require={
-        'cli': [*parse_requirements('requirements.txt'), "Click"]
+        'cli': [*parse_requirements('requirements.txt'), "Click"],
+        # typing_extensions drops 3.6 support in 4.2.0, but this
+        # can sometimes mess up during install
+        ':python_version == "3.6"': [
+            "typing_extensions<4.2.0"
+        ]
     },
     classifiers=CLASSIFIERS,
     # If there are data files included in your packages that need to be
